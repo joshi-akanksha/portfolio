@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Akanksha Joshi — Alien Data Scientist</title>
+  <style>
+    :root {
+      --bg: #050513;
+      --green: #00ff7b;
+      --red: #ff305f;
+      --yellow: #ffd966;
+      --cyan: #52f2ff;
+      --violet: #a855ff;
+      --text-main: #f9fafb;
+      --text-muted: #a1a1b5;
+      --border-soft: rgba(255, 255, 255, 0.18);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "Courier New", monospace;
+      background: var(--bg);
+      color: var(--text-main);
+      overflow-x: hidden;
+      line-height: 1.6;
+      position: relative;
+      scroll-snap-type: y mandatory;
+    }
+
+    /* CRT overlay & scanlines */
+
+    .crt-overlay {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.05) 1px,
+        transparent 2px,
+        transparent 3px
+      );
+      mix-blend-mode: soft-light;
+      opacity: 0.15;
+    }
+
+    .crt-glow {
+      position: fixed;
+      inset: -40px;
+      pointer-events: none;
+      background: radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 60%),
+        radial-gradient(circle at bottom, rgba(0, 255, 255, 0.1), transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.5;
+      z-index: 0;
+    }
+
+    /* Starfield canvas */
+
+    #starfield {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* GLOBAL WRAPPER */
+
+    .page-shell {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HUD NAV (top) */
+
+    .hud {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 0.5rem 1.5rem 0.8rem;
+      background: rgba(5, 5, 19, 0.9);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .hud-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+
+    .hud-led {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, var(--green), #0f0);
+      box-shadow: 0 0 10px rgba(0, 255, 123, 0.9);
+    }
+
+    .hud-center {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hud-link {
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      background: transparent;
+    }
+
+    .hud-link:hover,
+    .hud-link.active {
+      border-color: rgba(255, 255, 255, 0.6);
+      color: var(--text-main);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-right {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    /* SECTIONS AS LEVELS */
+
+    section {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3.5rem 1.5rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-inner {
+      width: 100%;
+      max-width: 1080px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* different futuristic themes per section */
+
+    #hero::before {
+      background: radial-gradient(circle at top, #332155 0, transparent 60%),
+        radial-gradient(circle at bottom, #103043 0, transparent 60%);
+    }
+
+    #about::before {
+      background: radial-gradient(circle at center, #201544 0, transparent 55%),
+        linear-gradient(135deg, rgba(0, 255, 123, 0.12), transparent);
+    }
+
+    #missions::before {
+      background: radial-gradient(circle at top, #400d25 0, transparent 60%),
+        linear-gradient(135deg, rgba(255, 48, 95, 0.16), transparent);
+    }
+
+    #education::before {
+      background: radial-gradient(circle at center, #152844 0, transparent 60%),
+        linear-gradient(135deg, rgba(168, 85, 255, 0.18), transparent);
+    }
+
+    #career::before {
+      background: radial-gradient(circle at bottom, #053b4f 0, transparent 60%),
+        linear-gradient(135deg, rgba(82, 242, 255, 0.14), transparent);
+    }
+
+    #contact::before {
+      background: radial-gradient(circle at center, #341246 0, transparent 60%),
+        linear-gradient(135deg, rgba(255, 217, 102, 0.13), transparent);
+    }
+
+    /* SECTION TITLE / LEVEL LABEL */
+
+    .section-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .level-tag {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .level-tag span.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px rgba(82, 242, 255, 0.8);
+    }
+
+    .section-title {
+      font-size: 1.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title span.prefix {
+      color: var(--green);
+    }
+
+    .section-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      max-width: 340px;
+    }
+
+    /* HERO SECTION (LEVEL 01) */
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2.3fr);
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .hero-main {
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+      align-items: center;
+      text-align: center;
+    }
+
+    .hero-banner {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 4vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      position: relative;
+      background: linear-gradient(90deg, #ffffff, #ff305f, #00ff7b, #ffffff);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: bannerGlow 6s linear infinite;
+      text-align: center;
+    }
+
+    @keyframes bannerGlow {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .hero-links-inline {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      justify-content: center;
+    }
+
+    .hero-link-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid var(--green);
+      color: var(--green);
+      text-decoration: none;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease-out;
+    }
+
+    .hero-link-pill:hover {
+      background: var(--green);
+      color: #050513;
+      box-shadow: 0 0 14px rgba(0, 255, 123, 0.7);
+    }
+
+    .hero-role {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--cyan);
+    }
+
+    .hero-tagline {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 32rem;
+    }
+
+    .hero-tagline strong {
+      color: var(--text-main);
+    }
+
+    .hero-character-row {
+      margin-top: 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hero-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 20%, #1e293b, #020617);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 18px rgba(82, 242, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .hero-avatar svg {
+      width: 80%;
+      height: 80%;
+    }
+
+    .hero-speech {
+      max-width: 360px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 14px;
+      border: 1px solid var(--red);
+      padding: 0.8rem 1rem;
+      font-size: 0.82rem;
+      position: relative;
+      color: #ffb3c7;
+      text-align: left;
+    }
+
+    .hero-speech::before {
+      content: "";
+      position: absolute;
+      left: -9px;
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
+      width: 12px;
+      height: 12px;
+      background: inherit;
+      border-left: inherit;
+      border-bottom: inherit;
+    }
+
+    .hero-speech-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 0.3rem;
+    }
+
+    .hero-speech-body {
+      font-style: italic;
+    }
+
+    .hero-speech-body span.fun {
+      color: var(--green);
+    }
+
+    .hero-ctas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.8rem 1.8rem;
+      border-radius: 999px;
+      border: 2px solid;
+      background: transparent;
+      cursor: pointer;
+      font-family: "Courier New", monospace;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: all 0.2s ease-out;
+    }
+
+    .btn-primary {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .btn-primary:hover {
+      background: var(--red);
+      color: #050513;
+      box-shadow: 0 0 18px rgba(255, 48, 95, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .btn-secondary:hover {
+      background: var(--green);
+      color: #050513;
+      box-shadow: 0 0 18px rgba(0, 255, 123, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .hero-meta-row {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      font-size: 0.75rem;
+      justify-content: center;
+    }
+
+    .meta-pill {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(0, 0, 0, 0.65);
+      color: var(--text-muted);
+    }
+
+    /* Mini radar */
+
+    .hero-right {
+      position: relative;
+      min-height: 260px;
+    }
+
+    .radar-card {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      max-width: 320px;
+      max-height: 320px;
+      border-radius: 24px;
+      background: radial-gradient(circle at 20% 0, #1d4ed8 0, #020617 60%);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95);
+      overflow: hidden;
+    }
+
+    .radar-inner {
+      position: absolute;
+      inset: 0;
+    }
+
+    .radar-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px dashed rgba(148, 163, 184, 0.6);
+      inset: 18%;
+    }
+
+    .radar-circle:nth-child(2) {
+      inset: 30%;
+    }
+
+    .radar-circle:nth-child(3) {
+      inset: 42%;
+    }
+
+    .radar-sweep {
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        rgba(82, 242, 255, 0.5),
+        transparent 40%,
+        transparent 100%
+      );
+      animation: sweep 5s linear infinite;
+      mix-blend-mode: screen;
+    }
+
+    @keyframes sweep {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .radar-rocket {
+      position: absolute;
+      left: 50%;
+      top: 52%; /* moved up to avoid overlap */
+      transform: translate(-50%, -50%) rotate(-90deg);
+      width: 52px;
+      height: 52px;
+      pointer-events: none;
+    }
+
+    .radar-text {
+      position: absolute;
+      bottom: 0.6rem;
+      left: 0.8rem;
+      right: 0.8rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+      padding-top: 1.1rem;
+    }
+
+    /* ABOUT / SPECIES DATA */
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.3fr) minmax(0, 1.7fr);
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 900px) {
+      .about-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .about-block {
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      padding: 1.6rem 1.4rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .about-block strong,
+    .about-block .highlight {
+      color: var(--green);
+    }
+
+    .alien-card {
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 1.6rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .alien-card::before {
+      content: "👽";
+      position: absolute;
+      font-size: 3rem;
+      right: 10%;
+      top: 8%;
+      opacity: 0.15;
+    }
+
+    .alien-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      margin-bottom: 0.6rem;
+    }
+
+    .alien-text {
+      font-size: 0.93rem;
+      color: var(--text-main);
+    }
+
+    .alien-text em {
+      color: var(--yellow);
+    }
+
+    /* MISSIONS / PROJECTS */
+
+    .missions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.4rem;
+      margin-top: 2rem;
+    }
+
+    .mission-card {
+      background: rgba(0, 0, 0, 0.68);
+      border-radius: 16px;
+      border: 1px solid rgba(0, 255, 123, 0.4);
+      padding: 1.2rem 1.1rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.18s ease-out;
+    }
+
+    .mission-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at 0 0, rgba(255, 48, 95, 0.22), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(82, 242, 255, 0.22), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+      pointer-events: none;
+    }
+
+    .mission-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
+      border-color: rgba(255, 255, 255, 0.75);
+    }
+
+    .mission-card:hover::before {
+      opacity: 1;
+    }
+
+    .mission-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+
+    .mission-title {
+      font-size: 0.98rem;
+      font-weight: bold;
+      color: var(--red);
+    }
+
+    .mission-tag {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .mission-role {
+      font-size: 0.8rem;
+      color: var(--cyan);
+      margin-bottom: 0.5rem;
+    }
+
+    .mission-summary {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .mission-outcome {
+      font-size: 0.82rem;
+      color: var(--green);
+      margin-top: 0.4rem;
+    }
+
+    .mission-toggle {
+      font-size: 0.75rem;
+      margin-top: 0.6rem;
+      color: var(--yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .mission-details {
+      margin-top: 0.6rem;
+      display: none;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px dashed rgba(255, 255, 255, 0.25);
+      padding-top: 0.5rem;
+    }
+
+    .mission-details ul {
+      padding-left: 1.1rem;
+      margin-top: 0.3rem;
+    }
+
+    .mission-details li {
+      margin-bottom: 0.25rem;
+    }
+
+    .mission-card.open .mission-details {
+      display: block;
+    }
+
+    /* Education */
+
+    .edu-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr);
+      gap: 1.6rem;
+    }
+
+    @media (max-width: 900px) {
+      .edu-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .edu-block {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      padding: 1.2rem 1.1rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .edu-title {
+      font-weight: bold;
+      color: var(--yellow);
+      margin-bottom: 0.3rem;
+    }
+
+    .edu-meta {
+      font-size: 0.8rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .edu-focus {
+      font-size: 0.83rem;
+    }
+
+    .skills-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.6rem;
+    }
+
+    .skill-chip {
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(168, 85, 255, 0.7);
+      font-size: 0.76rem;
+      color: var(--violet);
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .extra-block-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      margin-bottom: 0.4rem;
+    }
+
+    .extra-list {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .extra-list li {
+      margin-bottom: 0.25rem;
+    }
+
+    /* CAREER LOG */
+
+    .career-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.9fr);
+      gap: 1.6rem;
+    }
+
+    @media (max-width: 900px) {
+      .career-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .timeline-entry {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      padding: 1rem 1rem;
+      cursor: pointer;
+      transition: all 0.18s ease-out;
+      position: relative;
+    }
+
+    .timeline-entry:hover {
+      border-color: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
+    }
+
+    .timeline-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      align-items: baseline;
+    }
+
+    .timeline-role {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .timeline-org {
+      font-size: 0.8rem;
+      color: var(--cyan);
+    }
+
+    .timeline-meta {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .timeline-details {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .timeline-details ul {
+      padding-left: 1.1rem;
+      margin-top: 0.3rem;
+    }
+
+    .timeline-details li {
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-entry.open .timeline-details {
+      display: block;
+    }
+
+    .side-quests {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 16px;
+      border: 1px solid var(--border-soft);
+      padding: 1.2rem 1.1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .side-quests h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--yellow);
+      margin-bottom: 0.4rem;
+    }
+
+    .side-quests ul {
+      padding-left: 1.1rem;
+      margin-bottom: 0.7rem;
+    }
+
+    .side-quests li {
+      margin-bottom: 0.2rem;
+    }
+
+    /* CONTACT / COMMS */
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.5fr);
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 900px) {
+      .contact-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .contact-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .contact-links-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .contact-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.3rem;
+      border-radius: 999px;
+      border: 2px solid var(--green);
+      color: var(--green);
+      text-decoration: none;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      transition: all 0.2s ease-out;
+    }
+
+    .contact-link:hover {
+      background: var(--green);
+      color: #050513;
+      box-shadow: 0 0 18px rgba(0, 255, 123, 0.8);
+    }
+
+    .contact-console {
+      background: rgba(0, 0, 0, 0.78);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 1rem 1rem;
+      font-size: 0.8rem;
+      color: var(--green);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .contact-console-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .console-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 10px rgba(255, 48, 95, 0.8);
+    }
+
+    .console-line {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+  <div class="crt-overlay"></div>
+  <div class="crt-glow"></div>
+
+  <div class="page-shell">
+    <!-- HUD NAV -->
+    <header class="hud">
+      <div class="hud-inner">
+        <div class="hud-left">
+          <span class="hud-led"></span>
+          <span>AJ-1942 // Alien Data Ops</span>
+        </div>
+        <nav class="hud-center">
+          <button class="hud-link active" data-target="hero">L1: Intro</button>
+          <button class="hud-link" data-target="about">L2: Species Data</button>
+          <button class="hud-link" data-target="missions">L3: Missions</button>
+          <button class="hud-link" data-target="education">L4: Education</button>
+          <button class="hud-link" data-target="career">L5: Career Log</button>
+          <button class="hud-link" data-target="contact">L6: Comms</button>
+        </nav>
+        <div class="hud-right">PRESS • M • TO TOGGLE MISSIONS</div>
+      </div>
+    </header>
+
+    <!-- LEVEL 01: HERO -->
+    <section id="hero">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 01 // Landing Zone</span>
+            </div>
+          </div>
+          <p class="section-sub">
+            1984 arcade vibes: vertical shooter energy, but instead of planes over the Pacific,
+            rockets and data problems orbiting Earth.
+          </p>
+        </div>
+
+        <div class="hero-grid">
+          <div class="hero-main">
+            <div class="hero-banner">
+              <h1>AKANKSHA&nbsp;JOSHI</h1>
+              <div class="hero-links-inline">
+                <a href="mailto:aj050901@gmail.com" class="hero-link-pill">
+                  <span>📧</span><span>Email</span>
+                </a>
+                <a href="https://linkedin.com/in/joshi-akanksha/" target="_blank" class="hero-link-pill">
+                  <span>🔗</span><span>LinkedIn</span>
+                </a>
+                <a href="https://github.com/joshi-akanksha" target="_blank" class="hero-link-pill">
+                  <span>💻</span><span>GitHub</span>
+                </a>
+              </div>
+            </div>
+
+            <p class="hero-role">Data Scientist // AI Systems Builder // Growth-Minded Alien</p>
+            <p class="hero-tagline">
+              I build <strong>machine learning systems</strong> and <strong>data strategies</strong>
+              that turn messy, biased, “is this even real?” data into decisions that actually land.
+            </p>
+
+            <div class="hero-character-row">
+              <div class="hero-avatar" aria-hidden="true">
+                <!-- Alien figurine SVG -->
+                <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="alienSkin" cx="50%" cy="15%" r="70%">
+                      <stop offset="0%" stop-color="#bbf7d0" />
+                      <stop offset="50%" stop-color="#22c55e" />
+                      <stop offset="100%" stop-color="#14532d" />
+                    </radialGradient>
+                  </defs>
+                  <circle cx="40" cy="40" r="26" fill="url(#alienSkin)" />
+                  <!-- eyes -->
+                  <ellipse cx="28" cy="38" rx="8" ry="10" fill="#020617" />
+                  <ellipse cx="52" cy="38" rx="8" ry="10" fill="#020617" />
+                  <circle cx="26" cy="36" r="2" fill="#e5e7eb" />
+                  <circle cx="50" cy="36" r="2" fill="#e5e7eb" />
+                  <!-- mouth -->
+                  <path d="M28 50 Q40 56 52 50" stroke="#e5e7eb" stroke-width="2" fill="none" stroke-linecap="round" />
+                  <!-- little antenna -->
+                  <line x1="40" y1="14" x2="40" y2="4" stroke="#22c55e" stroke-width="2" />
+                  <circle cx="40" cy="3" r="3" fill="#a855f7" />
+                </svg>
+              </div>
+              <div class="hero-speech">
+                <div class="hero-speech-title">voice line // passive skill</div>
+                <div class="hero-speech-body">
+                  I have unlocked <span class="fun">stupidity.exe</span> so advanced it
+                  looped back into <span class="fun">wisdom.v2</span>. Side effect:
+                  I say the “dumb” stuff out loud so the plan actually makes sense.
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-ctas">
+              <button class="btn btn-primary" onclick="scrollToSection('missions')">
+                <span>▶</span><span>Start Missions</span>
+              </button>
+              <button class="btn btn-secondary" onclick="scrollToSection('career')">
+                <span>◎</span><span>View Career Log</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <div class="radar-card">
+              <div class="radar-inner">
+                <div class="radar-circle"></div>
+                <div class="radar-circle"></div>
+                <div class="radar-circle"></div>
+                <div class="radar-sweep"></div>
+
+                <div class="radar-rocket">
+                  <svg viewBox="0 0 40 60" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 5 L28 25 L12 25 Z" fill="#ff305f" />
+                    <rect x="18" y="25" width="4" height="20" fill="#00ff7b" />
+                    <circle cx="20" cy="32" r="3" fill="#ffd966" />
+                    <polygon points="12,45 28,45 20,58" fill="#ff305f" opacity="0.85" />
+                  </svg>
+                </div>
+
+                <div class="radar-text">
+                  <div>target: akanksha.j // status: online</div>
+                  <div>zone: earth · sector: data systems</div>
+                  <div>objective: ship models · keep humans safe</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 02: WHO I AM -->
+    <section id="about">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 02 // Species Data</span>
+            </div>
+            <h2 class="section-title">
+              <span class="prefix">&gt;</span><span>Who I Am</span>
+            </h2>
+          </div>
+          <p class="section-sub">
+            Gen Z-adjacent, alien-coded. Enjoys cursed datasets, clean thinking, and jokes about buffer overflows in the human brain.
+          </p>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-block">
+            I usually pass as human, but functionally I am a
+            <span class="highlight">data alien</span>.
+            I get called a data scientist, AI systems builder, and occasionally “why are you enjoying this dataset?” person.
+            <br /><br />
+            I have worked across
+            <span class="highlight">legal tech</span> (AI trademark similarity),
+            <span class="highlight">EdTech</span> (Girl Geek-style strategy),
+            <span class="highlight">energy & climate</span> (equitable load modelling),
+            <span class="highlight">mental health</span> (MindScape Jr),
+            and <span class="highlight">growth analytics</span> (retention & cohorts at Medront).
+            <br /><br />
+            My niche is where
+            <span class="highlight">models, product constraints, humans, and ethics</span>
+            collide. I like taking a messy spec and turning it into something
+            shippable, interpretable, and not secretly evil.
+          </div>
+
+          <div class="alien-card">
+            <div class="alien-label">field notes // akanksha.j</div>
+            <div class="alien-text">
+              <em>Origin:</em> India · Currently in Manchester, UK<br />
+              <em>Class:</em> Research Statistician & MSc Data Science student<br />
+              <em>Main stats:</em> ML, analytics, growth, fairness, creative chaos<br />
+              <em>Favourite quests:</em> noisy data, refund logic, fairness in energy and transport, “show me why” stakeholders.
+              <br /><br />
+              Lore drop:
+              I like problems where the data fights back — noisy, biased, incomplete —
+              and still has to become decisions that affect real people. If the dataset looks
+              mildly cursed, I am interested.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 03: MISSIONS / PROJECTS -->
+    <section id="missions">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 03 // Missions</span>
+            </div>
+            <h2 class="section-title">
+              <span class="prefix">&gt;</span><span>Deployed Systems</span>
+            </h2>
+          </div>
+          <p class="section-sub">
+            Think of these as boss levels. Click cards to open the full build notes.
+          </p>
+        </div>
+
+        <div class="missions-grid">
+          <!-- Trademark Helpline -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">AI-Powered Trademark Similarity</h3>
+              <span class="mission-tag">Legal Tech · Multimodal</span>
+            </div>
+            <div class="mission-role">AI Developer · The Trademark Helpline Ltd · Jan–May 2025</div>
+            <p class="mission-summary">
+              Multimodal trademark similarity system for 4M+ UK IPO filings. Text + logo retrieval to spot
+              look-alikes and support faster, fairer legal decisions.
+            </p>
+            <p class="mission-outcome">
+              ✓ Cut average search time from ~2 hours to under 70 seconds per trademark query.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Implemented text similarity: token normalization, phonetic keys (Metaphone), fuzzy ratios (RapidFuzz), and transformer embeddings.</li>
+                <li>Implemented logo similarity via perceptual hashes (pHash) and CNN/ResNet-style features, combined in a weighted risk score.</li>
+                <li>Engineered FAISS + PostgreSQL indexing for fast retrieval on millions of historical filings.</li>
+                <li>Co-designed risk categories (high/medium/low) and documented thresholds + error modes with legal stakeholders.</li>
+                <li>Contributed to explainable AI modules so reviewers could see “why” a mark triggered risk and override with rationale.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Equitable Energy -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Equitable Energy Demand Modelling</h3>
+              <span class="mission-tag">Energy · Fairness</span>
+            </div>
+            <div class="mission-role">Researcher · University of Manchester · Jan–Oct 2025</div>
+            <p class="mission-summary">
+              Temporal load modelling using UK SERL smart meter data to understand who actually benefits from
+              demand response and dynamic tariffs — and who gets squeezed.
+            </p>
+            <p class="mission-outcome">
+              ✓ Delivered an equity-centred framework showing that efficiency gains don’t automatically fix peak stress.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Analysed 4 years of half-hourly energy consumption data for UK households.</li>
+                <li>Built SARIMA/SARIMAX baselines with weather variables (HDD/CDD) to model seasonality and external drivers.</li>
+                <li>Created features for daily/weekly cycles, peak-to-average ratios, and volatility; clustered households using UMAP/HDBSCAN/PCA+k-means.</li>
+                <li>Simulated tariff and demand-response scenarios to test who gains vs. who bears peak price pressure.</li>
+                <li>Wrapped everything in a reproducible Python pipeline with UK Data Service ethics and governance compliance.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Supplier Reliability -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Supplier Reliability Prediction</h3>
+              <span class="mission-tag">Procurement · ML</span>
+            </div>
+            <div class="mission-role">ML Developer · University of Manchester · Sep 2024–Jan 2025</div>
+            <p class="mission-summary">
+              ML framework for supplier cost and reliability risk, designed to help procurement teams focus on the suppliers that actually need scrutiny.
+            </p>
+            <p class="mission-outcome">
+              ✓ Delivered an analytics-ready risk table to reduce cost overruns and focus review time on the top-risk suppliers.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Merged multi-source records (orders, lead times, defects/returns) into a clean supplier view.</li>
+                <li>Engineered stability signals (on-time variance, defect streaks, volume thresholds).</li>
+                <li>Trained linear + tree-based models with stratified CV, optimising precision @ top-k for review prioritisation.</li>
+                <li>Added human rules (e.g. blackout for new suppliers with limited history) to avoid fake confidence.</li>
+                <li>Handed off a weekly-refresh script and monitoring checklist for drift and threshold reviews.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Train Refund -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Train Delay Refund Eligibility</h3>
+              <span class="mission-tag">Transport · Classification</span>
+            </div>
+            <div class="mission-role">Data Science Developer · Sep–Dec 2024</div>
+            <p class="mission-summary">
+              Refund eligibility classifier for railway customers to support operations teams in making faster, fairer decisions.
+            </p>
+            <p class="mission-outcome">
+              ✓ Reduced manual triage time while maintaining fairness across passenger categories.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Framed the problem as cost-sensitive classification with policy-driven constraints.</li>
+                <li>Engineered features from delay patterns, routes, fare types, service class, and historical performance.</li>
+                <li>Benchmarked logistic regression and tree-based models; evaluated with F1 and ROC-AUC.</li>
+                <li>Added policy-mandated rules and simple reason codes for each decision.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Gameplay DB -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Relational DB for Gameplay Simulation</h3>
+              <span class="mission-tag">Data Eng · Games</span>
+            </div>
+            <div class="mission-role">Database Developer · Sep 2024–Jan 2025</div>
+            <p class="mission-summary">
+              Back-end schema and analytics queries for simulating player interactions, events, and in-game economy.
+            </p>
+            <p class="mission-outcome">
+              ✓ Produced a robust, analytics-ready database to simulate player behaviour and answer retention + economy questions.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Modelled players, sessions, events, and transactions in 3NF using MySQL/PostgreSQL.</li>
+                <li>Designed keys, FKs, and indexes for common queries (session length, churn, in-game spend).</li>
+                <li>Built seed + ingest routines and data validation checks for referential integrity.</li>
+                <li>Created a “query cookbook” with CTEs and window functions for analysts.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- MindScape Jr -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">MindScape Jr – Cognitive Well-being</h3>
+              <span class="mission-tag">Mental Health · Kids</span>
+            </div>
+            <div class="mission-role">Team Lead & Research Developer · 2023–2024</div>
+            <p class="mission-summary">
+              AI-based system for emotional health tracking in children using sentiment analysis and a safe conversational agent.
+            </p>
+            <p class="mission-outcome">
+              ✓ Published at IEEE CONIT 2023; recognized for early detection potential in child mental health.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Built a Random Forest sentiment model using TF-IDF; reached ~85% accuracy with 10-fold CV.</li>
+                <li>Developed a chatbot in RASA for context-aware, safe conversations with personalised coping suggestions.</li>
+                <li>Synced data with Firebase for real-time updates and offline resilience.</li>
+                <li>Designed a decision-support engine to flag at-risk users, collaborating with mental health professionals.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Smaller “classic” projects -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Games & Systems · University of Mumbai</h3>
+              <span class="mission-tag">CS Fundamentals</span>
+            </div>
+            <div class="mission-role">Student Developer · 2020–2021</div>
+            <p class="mission-summary">
+              Built smaller end-to-end systems: Snakes & Ladders GUI, a restaurant billing app, and a web-enabled manufacturing process prototype.
+            </p>
+            <p class="mission-outcome">
+              ✓ Strengthened fundamentals in Python, Java, GUI design, and client–server architecture.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Snakes & Ladders: multi-player Tkinter game with dice animations and MVC-style separation.</li>
+                <li>Restaurant Billing: modular tax/discount engine with printable bill output.</li>
+                <li>Web-enabled manufacturing: Java client–server prototype with feasibility checks and job IDs.</li>
+              </ul>
+            </div>
+          </article>
+
+          <!-- Girl Geek -->
+          <article class="mission-card">
+            <div class="mission-top">
+              <h3 class="mission-title">Girl Geek Network Strategy</h3>
+              <span class="mission-tag">EdTech · Strategy</span>
+            </div>
+            <div class="mission-role">Data Strategy & Market Analyst · Feb–Jun 2025</div>
+            <p class="mission-summary">
+              Strategy work for an EdTech startup empowering women in tech, using structured frameworks and data to de-fuzz decisions.
+            </p>
+            <p class="mission-outcome">
+              ✓ Delivered a roadmap that sharpened product–market fit and go-to-market direction.
+            </p>
+            <div class="mission-toggle">[ tap / click for build details ]</div>
+            <div class="mission-details">
+              <ul>
+                <li>Used SWOT, PESTEL, Porter’s Five Forces, BMC, and Value Proposition Canvas to map risk and opportunity.</li>
+                <li>Ran customer segmentation and competitor benchmarking to inform positioning.</li>
+                <li>Proposed strategies for retention, contributor engagement, and scalable growth.</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 04: EDUCATION & SKILLS -->
+    <section id="education">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 04 // Uplink: Education</span>
+            </div>
+            <h2 class="section-title">
+              <span class="prefix">&gt;</span><span>Education & Skill Matrix</span>
+            </h2>
+          </div>
+          <p class="section-sub">
+            Where the alien firmware was installed: degrees, certificates, and the toolkit I actually ship with.
+          </p>
+        </div>
+
+        <div class="edu-grid">
+          <!-- Degrees -->
+          <div>
+            <div class="edu-block" style="margin-bottom:1rem;">
+              <div class="edu-title">MSc, Data Science</div>
+              <div class="edu-meta">The University of Manchester · Sep 2024 – Sep 2025 · Manchester, UK</div>
+              <div class="edu-focus">
+                Focus: machine learning, time-series forecasting, big data, and
+                <strong>responsible AI</strong>.
+                Used dissertation and projects to explore fairness, interpretability, and policy impact in energy and transport.
+              </div>
+            </div>
+
+            <div class="edu-block">
+              <div class="edu-title">Bachelor of Engineering, Information Technology</div>
+              <div class="edu-meta">University of Mumbai · Feb 2020 – Feb 2024 · GPA: 8.62</div>
+              <div class="edu-focus">
+                Core CS, data structures & algorithms, software engineering, and applied projects
+                (games, billing system, web-enabled manufacturing).
+              </div>
+            </div>
+
+            <div class="edu-block" style="margin-top:1rem;">
+              <div class="extra-block-title">Certificates & Courses</div>
+              <ul class="extra-list">
+                <li><strong>Power BI for Beginners: Build your First Report</strong> — Coursera Project Network · Oct 2025 · ID: LW9V9D5C0SCG</li>
+                <li><strong>International Business Environment</strong> — Coursera · May 2024</li>
+                <li><strong>Quantitative Foundations for International Business</strong> — Coursera · May 2024</li>
+              </ul>
+              <div class="extra-block-title" style="margin-top:0.7rem;">Technical Paper</div>
+              <ul class="extra-list">
+                <li>“MindScape Jr: Cognitive well-being analysis system for young minds” — IEEE CONIT 2023.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Skills + Achievements -->
+          <div>
+            <div class="edu-block">
+              <div class="extra-block-title">Skill Matrix</div>
+              <div><strong>Data & ML:</strong></div>
+              <div class="skills-cloud">
+                <span class="skill-chip">Python</span>
+                <span class="skill-chip">SQL</span>
+                <span class="skill-chip">PostgreSQL</span>
+                <span class="skill-chip">MySQL</span>
+                <span class="skill-chip">Pandas</span>
+                <span class="skill-chip">NumPy</span>
+                <span class="skill-chip">Scikit-learn</span>
+                <span class="skill-chip">Random Forest</span>
+                <span class="skill-chip">SARIMAX</span>
+                <span class="skill-chip">Time Series</span>
+                <span class="skill-chip">Classification</span>
+                <span class="skill-chip">Feature Engineering</span>
+                <span class="skill-chip">NLP</span>
+                <span class="skill-chip">BERT</span>
+                <span class="skill-chip">RapidFuzz</span>
+                <span class="skill-chip">Metaphone</span>
+                <span class="skill-chip">ResNet</span>
+                <span class="skill-chip">pHash</span>
+                <span class="skill-chip">FAISS</span>
+                <span class="skill-chip">UMAP</span>
+                <span class="skill-chip">HDBSCAN</span>
+                <span class="skill-chip">PCA</span>
+              </div>
+              <div style="margin-top:0.6rem;"><strong>Analytics & BI:</strong></div>
+              <div class="skills-cloud">
+                <span class="skill-chip">Zoho Analytics</span>
+                <span class="skill-chip">Power BI</span>
+                <span class="skill-chip">Dashboards</span>
+                <span class="skill-chip">Cohorts & Funnels</span>
+                <span class="skill-chip">A/B Test Reads</span>
+                <span class="skill-chip">KPI Design</span>
+              </div>
+              <div style="margin-top:0.6rem;"><strong>Systems & Tools:</strong></div>
+              <div class="skills-cloud">
+                <span class="skill-chip">REST APIs</span>
+                <span class="skill-chip">API Integrations</span>
+                <span class="skill-chip">PostgreSQL tuning</span>
+                <span class="skill-chip">MongoDB</span>
+                <span class="skill-chip">NoSQL</span>
+                <span class="skill-chip">Azure</span>
+                <span class="skill-chip">Git</span>
+                <span class="skill-chip">MATLAB</span>
+              </div>
+              <div style="margin-top:0.6rem;"><strong>Business & Strategy:</strong></div>
+              <div class="skills-cloud">
+                <span class="skill-chip">SWOT</span>
+                <span class="skill-chip">PESTEL</span>
+                <span class="skill-chip">Porter’s 5 Forces</span>
+                <span class="skill-chip">Go-to-Market</span>
+                <span class="skill-chip">Growth Strategy</span>
+                <span class="skill-chip">Product Analytics</span>
+              </div>
+              <div style="margin-top:0.6rem;"><strong>Languages:</strong></div>
+              <div class="skills-cloud">
+                <span class="skill-chip">English</span>
+                <span class="skill-chip">Hindi</span>
+              </div>
+            </div>
+
+            <div class="edu-block" style="margin-top:1rem;">
+              <div class="extra-block-title">Achievements & Extras</div>
+              <ul class="extra-list">
+                <li>Academic Excellence Award from the Indian Coast Guard for Class 12 CBSE results.</li>
+                <li>Gesture Controlled Robot project at University of Mumbai — gesture-based real-time robot control, showcased at tech exhibitions.</li>
+                <li>Magazine pieces in <em>Zeal</em>, <em>Abhivishwa</em>, and <em>Letters to Strangers</em> (writing about nostalgia, women empowerment, and mental health).</li>
+                <li>Multiple anthology publications: “Dialogues of Fallen Heart”, “Perpetuation of Verses”, “Bottled Cup of Emotion”.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 05: CAREER LOG -->
+    <section id="career">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 05 // Career Log</span>
+            </div>
+            <h2 class="section-title">
+              <span class="prefix">&gt;</span><span>Experience & Leadership</span>
+            </h2>
+          </div>
+          <p class="section-sub">
+            Click entries to open the log. This is the black box recorder of where I’ve actually worked and what I did.
+          </p>
+        </div>
+
+        <div class="career-grid">
+          <div class="timeline">
+            <!-- Happy City Hub -->
+            <article class="timeline-entry">
+              <div class="timeline-head">
+                <div>
+                  <div class="timeline-role">Research Statistician</div>
+                  <div class="timeline-org">Happy City Hub · Part-time</div>
+                </div>
+                <div class="timeline-meta">current · urban quality of life</div>
+              </div>
+              <div class="timeline-details">
+                <ul>
+                  <li>Working on the seventh edition of the Happy City Index, covering 615 cities worldwide.</li>
+                  <li>Collecting and analysing data across 82 indicators and six themes: Citizens, Governance, Environment, Economy, Health, and Mobility.</li>
+                  <li>Contributing to metrics and interpretation for urban planning, social dynamics, and ecological context.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- Medront Growth -->
+            <article class="timeline-entry">
+              <div class="timeline-head">
+                <div>
+                  <div class="timeline-role">Growth & Data Analysis Specialist</div>
+                  <div class="timeline-org">Medront Datalabs Pvt Ltd · Delhi, India</div>
+                </div>
+                <div class="timeline-meta">Jan 2024 – Aug 2024</div>
+              </div>
+              <div class="timeline-details">
+                <ul>
+                  <li>Executed user acquisition strategy with API integrations (Facebook, Instagram, Gmail), growing active user base to 20,000+.</li>
+                  <li>Analysed A/B tests and cohort data to drive a ~40% increase in 30-day retention.</li>
+                  <li>Built and maintained real-time KPI dashboards in Zoho Analytics.</li>
+                  <li>Supported launch of gamified features, boosting engagement by ~25%.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- Medront Strategy -->
+            <article class="timeline-entry">
+              <div class="timeline-head">
+                <div>
+                  <div class="timeline-role">Junior Business Strategy Analyst</div>
+                  <div class="timeline-org">Medront Datalabs Pvt Ltd · Mumbai, India</div>
+                </div>
+                <div class="timeline-meta">Oct 2023 – Jan 2024</div>
+              </div>
+              <div class="timeline-details">
+                <ul>
+                  <li>Researched digital privacy trends across fintech and healthtech to identify B2B2C partnership opportunities.</li>
+                  <li>Helped develop client outreach material with clear, GDPR-aware messaging.</li>
+                  <li>Supported LinkedIn and Instagram campaigns to grow brand awareness.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- True Dreamster -->
+            <article class="timeline-entry">
+              <div class="timeline-head">
+                <div>
+                  <div class="timeline-role">Publishing Lead & Editor</div>
+                  <div class="timeline-org">True Dreamster Press LLP · Jaipur, India</div>
+                </div>
+                <div class="timeline-meta">Jun 2022 – Jan 2023</div>
+              </div>
+              <div class="timeline-details">
+                <ul>
+                  <li>Owned the full anthology production lifecycle: concept, contributor recruitment, editing, design, and release.</li>
+                  <li>Directed editorial tone, structure, and timelines.</li>
+                  <li>Recruited and managed 12 of 23 authors, guiding revisions and cohesion.</li>
+                  <li>Coordinated with typesetting, cover design, and print teams for quality control.</li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- Konnected -->
+            <article class="timeline-entry">
+              <div class="timeline-head">
+                <div>
+                  <div class="timeline-role">Head of Content</div>
+                  <div class="timeline-org">Konnected · Non-profit · Mumbai, India</div>
+                </div>
+                <div class="timeline-meta">Jun 2021 – Mar 2022</div>
+              </div>
+              <div class="timeline-details">
+                <ul>
+                  <li>Led content team to conceptualise, execute, and promote social impact projects.</li>
+                  <li>Orchestrated an Instagram campaign that increased website traffic by ~20%.</li>
+                </ul>
+              </div>
+            </article>
+          </div>
+
+          <div class="side-quests">
+            <h3>Leadership & Community Side Quests</h3>
+            <ul>
+              <li><strong>Head of Social Media Department</strong> — IT Student Association, Bharati Vidyapeeth College of Engineering (Jan 2023 – Apr 2023): led content strategy and outreach; achieved ~25% increase in followers and engagement.</li>
+              <li><strong>Cultural Event Head</strong> — Coordinated volunteers and logistics to run large-scale cultural events smoothly (Feb 2022 – Mar 2022).</li>
+              <li><strong>Community Work:</strong> coastal clean-up with Indian Coast Guard (2018); ongoing writing and anthology work about mental health and identity.</li>
+            </ul>
+            <h3>Writing & Publishing</h3>
+            <ul>
+              <li>Magazine articles: “Those were the days” (<em>Zeal</em>, 2022), “Women empowerment leads to social development” (<em>Abhivishwa</em>, 2022), “Letters to strangers” (<em>Letters to Strangers</em>, 2020).</li>
+              <li>Anthologies: “Dialogues of Fallen Heart” (True Dreamster Press, 2023), “Perpetuation of Verses” (2022), “Bottled Cup of Emotion” (FanstixX, 2021).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 06: CONTACT / COMMS -->
+    <section id="contact">
+      <div class="section-inner">
+        <div class="section-header">
+          <div>
+            <div class="level-tag">
+              <span class="dot"></span>
+              <span>Level 06 // Comms Channel</span>
+            </div>
+            <h2 class="section-title">
+              <span class="prefix">&gt;</span><span>Talk To The Alien</span>
+            </h2>
+          </div>
+          <p class="section-sub">
+            Recommended: async signals. Email and LinkedIn are great. GitHub is where the experiments live.
+          </p>
+        </div>
+
+        <div class="contact-grid">
+          <div>
+            <p class="contact-text">
+              I promise I am only slightly more awkward in person than in emails —
+              but I do bring charts, weird metaphors, and honest takes about your data.
+              <br /><br />
+              If you’re working on something at the intersection of
+              <strong>AI systems, fairness, urban or climate problems, or human behaviour</strong>,
+              I probably want to hear about it.
+            </p>
+            <div class="contact-links-row">
+              <a href="mailto:aj050901@gmail.com" class="contact-link">📧 Email</a>
+              <a href="https://linkedin.com/in/joshi-akanksha/" target="_blank" class="contact-link">🔗 LinkedIn</a>
+              <a href="https://github.com/joshi-akanksha" target="_blank" class="contact-link">💻 GitHub</a>
+            </div>
+          </div>
+
+          <div class="contact-console" id="console">
+            <div class="contact-console-header">
+              <div>
+                <span class="console-dot"></span> <span>COMMS.LOG</span>
+              </div>
+              <div>mode: idle</div>
+            </div>
+            <div id="console-lines"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © 2025 Akanksha Joshi · Built like an 80s alien arcade shooter, powered by messy data and upgraded stupidity.exe.
+    </footer>
+  </div>
+
+  <script>
+    // STARFIELD
+    const canvas = document.getElementById("starfield");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * ratio;
+      canvas.height = window.innerHeight * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const stars = [];
+    const rockets = [];
+    const STAR_COUNT = 120;
+    const ROCKET_COUNT = 8;
+
+    class Star {
+      constructor() {
+        this.reset(true);
+      }
+      reset(initial) {
+        this.x = Math.random() * window.innerWidth;
+        this.y = initial ? Math.random() * window.innerHeight : -10;
+        this.speed = 0.4 + Math.random() * 0.6;
+        this.size = Math.random() * 1.8 + 0.5;
+        this.alpha = 0.2 + Math.random() * 0.6;
+      }
+      update() {
+        this.y += this.speed;
+        if (this.y > window.innerHeight + 10) {
+          this.reset(false);
+        }
+      }
+      draw() {
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    class Rocket {
+      constructor() {
+        this.reset(true);
+      }
+      reset(initial) {
+        this.x = Math.random() * window.innerWidth;
+        this.y = initial
+          ? Math.random() * window.innerHeight
+          : window.innerHeight + 40;
+        this.speedY = -1.2 - Math.random() * 0.8;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.length = 16 + Math.random() * 10;
+        this.color = Math.random() > 0.5 ? "#ff305f" : "#00ff7b";
+      }
+      update() {
+        this.y += this.speedY;
+        this.x += this.speedX;
+        if (this.y < -50) {
+          this.reset(false);
+        }
+      }
+      draw() {
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x, this.y + this.length);
+        ctx.stroke();
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x - 2, this.y - 4, 4, 4);
+      }
+    }
+
+    for (let i = 0; i < STAR_COUNT; i++) stars.push(new Star());
+    for (let i = 0; i < ROCKET_COUNT; i++) rockets.push(new Rocket());
+
+    function animate() {
+      ctx.fillStyle = "rgba(5,5,19,0.75)";
+      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+      stars.forEach((s) => {
+        s.update();
+        s.draw();
+      });
+
+      rockets.forEach((r) => {
+        r.update();
+        r.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // NAV SCROLL + ACTIVE STATE
+    function scrollToSection(id) {
+      const section = document.getElementById(id);
+      if (!section) return;
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+
+    const hudLinks = document.querySelectorAll(".hud-link");
+    hudLinks.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.getAttribute("data-target");
+        scrollToSection(target);
+      });
+    });
+
+    function updateActiveNav() {
+      const sections = ["hero", "about", "missions", "education", "career", "contact"];
+      let activeId = "hero";
+      const scrollY = window.scrollY;
+      sections.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop - 150 <= scrollY) {
+          activeId = id;
+        }
+      });
+      hudLinks.forEach((btn) => {
+        btn.classList.toggle(
+          "active",
+          btn.getAttribute("data-target") === activeId
+        );
+      });
+    }
+    window.addEventListener("scroll", updateActiveNav);
+    updateActiveNav();
+
+    // MISSION CARD INTERACTION
+    document.querySelectorAll(".mission-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        card.classList.toggle("open");
+      });
+    });
+
+    // TIMELINE ENTRY INTERACTION
+    document.querySelectorAll(".timeline-entry").forEach((entry) => {
+      entry.addEventListener("click", () => {
+        entry.classList.toggle("open");
+      });
+    });
+
+    // SMALL CONSOLE TYPEOUT IN CONTACT
+    const consoleLinesEl = document.getElementById("console-lines");
+    const consoleMessages = [
+      "> ping akanksha.j...",
+      "> signal found: alien data scientist in Manchester",
+      "> channel open: email, linkedin, github",
+      "> hint: include problem, constraints, and your weird edge cases",
+      "> log: stupidity.exe successfully upgraded to wisdom.v2.0"
+    ];
+    let consoleIndex = 0;
+
+    function addConsoleLine() {
+      if (consoleIndex >= consoleMessages.length) {
+        consoleIndex = 0;
+        consoleLinesEl.innerHTML = "";
+      }
+      const line = document.createElement("div");
+      line.className = "console-line";
+      line.textContent = consoleMessages[consoleIndex++];
+      consoleLinesEl.appendChild(line);
+    }
+    addConsoleLine();
+    setInterval(addConsoleLine, 2200);
+
+    // keyboard shortcut: toggle all missions with "m"
+    window.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "m") {
+        document
+          .querySelectorAll(".mission-card")
+          .forEach((card) => card.classList.toggle("open"));
+      }
+    });
+
+    // background DOM stars
+    const starContainer = document.createElement("div");
+    starContainer.style.position = "fixed";
+    starContainer.style.inset = "0";
+    starContainer.style.pointerEvents = "none";
+    starContainer.style.zIndex = "0";
+    document.body.appendChild(starContainer);
+
+    for (let i = 0; i < 35; i++) {
+      const dot = document.createElement("div");
+      dot.style.position = "absolute";
+      dot.style.width = "2px";
+      dot.style.height = "2px";
+      dot.style.borderRadius = "50%";
+      dot.style.background = "#ffffff";
+      dot.style.opacity = "0.3";
+      dot.style.left = Math.random() * 100 + "%";
+      dot.style.top = Math.random() * 100 + "%";
+      starContainer.appendChild(dot);
+    }
+  </script>
+</body>
+</html>
+
